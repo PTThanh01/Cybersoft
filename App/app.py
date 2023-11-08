@@ -1,3 +1,4 @@
+from collections import deque
 import tkinter as tk
 from PIL import Image, ImageTk
 import networkx as nx
@@ -44,92 +45,145 @@ class Graph:
             current_vertex = previous_vertices[current_vertex]
         path.insert(0, start)
         return path
+    
+    def bfs_shortest_path(self, start, end):
+        if start not in self.graph or end not in self.graph:
+            return None  
+
+        # Create a queue for BFS and initialize it with the start node.
+        queue = deque()
+        queue.append((start, [start]))  # Each element in the queue is a tuple (current_node, path_so_far).
+
+        # Mark the start node as visited.
+        visited = set()
+        visited.add(start)
+
+        while queue:
+            current_node, path = queue.popleft()
+
+            # Check if we've reached the end node.
+            if current_node == end:
+                return path  # Return the path from start to end.
+
+            # Explore neighbors of the current node.
+            for neighbor in self.graph[current_node]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    new_path = path + [neighbor]  # Extend the path with the neighbor.
+                    queue.append((neighbor, new_path))
+
+        # If no path is found, return None or a message indicating that there's no path.
+        return None
+    
+    def dfs_shortest_path(self, start, end, path=[]):
+        path = path + [start]
+        if start == end:
+            return path
+
+        shortest_path = None
+        for neighbor in self.graph[start]:
+            if neighbor not in path:
+                new_path = self.dfs_shortest_path(neighbor, end, path)
+                if new_path:
+                    if not shortest_path or len(new_path) < len(shortest_path):
+                        shortest_path = new_path
+
+        return shortest_path
 
 
 # Hàm để cập nhật hình ảnh trên label
 def update_image(new_image):
     label.config(image=new_image)
     label.image = new_image
-
-
-shortest_path = []
-def calculate_shortest_path_and_draw(shortest_only=True):
-    global shortest_path  # Declare shortest_path as a global variable
-
-    new_start = start_entry.get()
-    new_destination = destination_entry.get()
-
-    # Kiểm tra xem điểm đến có tồn tại trong đồ thị không
-    if new_destination in G.nodes() and new_start in G.nodes():
-        shortest_path = nx.shortest_path(
-            G, source=new_start, target=new_destination, weight="weight"
-        )
-        result_label.config(
-            text=f"Đường đi ngắn nhất từ {new_start} đến {new_destination}: {' -> '.join(shortest_path)}"
-        )
-        result_label.update()
-
-        total_distance = nx.shortest_path_length(
-            G, source=new_start, target=new_destination, weight="weight"
-            
-        )
-        rounded_distance = round(total_distance, 2)
         
-        distances_text = f"Với khoảng cách: {rounded_distance}"
-        result_label.config(text=result_label.cget("text") + "\n" + distances_text)
-    else:
-        result_label.config(text=f"Không tồn tại điểm đến {new_destination} hoặc điểm bắt đầu {new_start}")
-        result_label.update()
+def calculate_shortest_path_and_draw(shortest_only=True):
+    start_node = start_node_entry.get()
+    end_node = end_node_entry.get()
 
-    # Tạo một từ điển với tọa độ tùy chỉnh cho các nút
-    fixed_positions = {
-        "0": (500,122),
-        "1": (290,190),
-        "2": (144,-103),
-        "3": (283,-109),
-        "4": (545,0.3),
-        "5": (85,202),
-        "6": (-131,77),
-        "7": (-380,-62),
-        "8": (-400,-233),
-        "9": (-62,-174),
-        "10": (52,-152),
-        "11": (150,-134),
-        "12": (128,-42),
-        "13": (-630,-206),
-    }
+    # Tìm đường đi ngắn nhất bằng thuật toán Dijkstra
+    if shortest_only:
+        shortest_path, total_distance = calculate_shortest_path(graph_obj, start_node, end_node)
+        result_label.config(text=f"Đường đi ngắn nhất từ {start_node} đến {end_node}: {' -> '.join(shortest_path)}\nVới khoảng cách {total_distance:.2f}")
+        result_label.update()  # Cập nhật giao diện người dùng
 
-    # Đọc hình ảnh gốc
+    draw_graph(G, node_positions, node_labels, shortest_path if shortest_only else None)
+
+
+def calculate_shortest_path_and_draw_bfs(shortest_only=True):
+    start_node = start_node_entry.get()
+    end_node = end_node_entry.get()
+
+    if shortest_only:
+        shortest_path, total_distance = calculate_shortest_path(graph_obj, start_node, end_node, method="bfs")
+        result_label.config(text=f"Đường đi ngắn nhất từ {start_node} đến {end_node}: {' -> '.join(shortest_path)}\nVới khoảng cách {total_distance}")
+        result_label.update()  # Cập nhật giao diện người dùng
+
+    draw_graph(G, node_positions, node_labels, shortest_path if shortest_only else None)
+
+
+def calculate_shortest_path_and_draw_dfs(shortest_only=True):
+    start_node = start_node_entry.get()
+    end_node = end_node_entry.get()
+
+    if shortest_only:
+        shortest_path, total_distance = calculate_shortest_path(graph_obj, start_node, end_node, method="dfs")
+        result_label.config(text=f"Đường đi ngắn nhất từ {start_node} đến {end_node}: {' -> '.join(shortest_path)}\nVới khoảng cách {total_distance}")
+        result_label.update()  # Cập nhật giao diện người dùng
+
+    draw_graph(G, node_positions, node_labels, shortest_path if shortest_only else None)
+
+
+def calculate_shortest_path(graph_obj, start_node, end_node, method="dijkstra"):
+    if method == "dijkstra":
+        shortest_path = graph_obj.dijkstra(start_node, end_node)
+    elif method == "bfs":
+        shortest_path = graph_obj.bfs_shortest_path(start_node, end_node)
+    elif method == "dfs":
+        shortest_path = graph_obj.dfs_shortest_path(start_node, end_node)
+
+    total_distance = 0
+    for i in range(len(shortest_path) - 1):
+        start_node, end_node = shortest_path[i], shortest_path[i + 1]
+        distance = graph_obj.graph[start_node][end_node]
+        total_distance += distance
+
+    return shortest_path, total_distance
+
+
+def draw_graph(G, node_positions, node_labels, shortest_path=None):
+    # Load the original image
     img = mpimg.imread("default1.png")
     img_width = img.shape[1]
     img_height = img.shape[0]
 
-    # Tính toán extent dựa trên kích thước hình ảnh gốc
+    # Calculate the extent based on the original image size
     extent = [-img_width / 2, img_width / 2, -img_height / 2, img_height / 2]
 
-    # Vẽ đồ thị trên hình ảnh gốc
+    # Draw the graph on the original image
     plt.imshow(img, extent=extent)
-    pos = nx.spring_layout(
-        G, pos=fixed_positions, fixed=fixed_positions.keys(), weight="weight"
-    )
-    labels = nx.get_edge_attributes(G, "weight")
-    nx.draw_networkx_nodes(G, pos, node_color="blue")
+    pos = nx.spring_layout(G, pos=node_positions, fixed=node_positions.keys(), weight='weight')
+    labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_nodes(G, pos, node_color='blue')
     nx.draw_networkx_edges(G, pos)
     nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)
     nx.draw_networkx_labels(G, pos)
+    pos = nx.spring_layout(G, pos=node_positions, fixed=node_positions.keys(), weight='weight')
 
-    if shortest_only:
-        # Vẽ đường đi ngắn nhất
-        path_edges = [
-            (shortest_path[i], shortest_path[i + 1])
-            for i in range(len(shortest_path) - 1)
-        ]
-        nx.draw_networkx_edges(G, pos, edgelist=path_edges, edge_color="red", width=1)
+    # Adjust the label positions
+    label_pos = {node: (pos[node][0], pos[node][1] + 20) for node in node_labels}
 
-    plt.axis("off")  # Tắt các trục
+    # Add labels to nodes with adjusted positions
+    nx.draw_networkx_labels(G, labels=node_labels, pos=label_pos, font_size=10, font_color="black")
+
+    if shortest_path:
+        # Draw the shortest path
+        path_edges = [(shortest_path[i], shortest_path[i + 1]) for i in range(len(shortest_path) - 1)]
+        nx.draw_networkx_edges(G, pos, edgelist=path_edges, edge_color='red', width=1.1)
+
+    plt.axis('off')
     plt.show()
-        
 
+            
 # Tạo cửa sổ tkinter
 root = tk.Tk()
 root.title("Chuyển đổi hình ảnh và Giải bài toán")
@@ -146,23 +200,40 @@ label.pack()
 
 # Tạo label và khung nhập chữ cho điểm bắt đầu mới
 start_label = tk.Label(root, text="Từ:")
-start_entry = tk.Entry(root)
+start_node_entry = tk.Entry(root)
+end_label = tk.Label(root, text="Đến:")
+end_node_entry = tk.Entry(root)
+start_node_entry.insert(0, "0")  # Giá trị mặc định cho điểm bắt đầu
+end_node_entry.insert(0, "13")  # Giá trị mặc định cho điểm kết thúc
 start_label.pack()
-start_entry.pack()
-
-# Tạo label và khung nhập chữ cho điểm đến mới
-destination_label = tk.Label(root, text="Đến:")
-destination_entry = tk.Entry(root)
-destination_label.pack()
-destination_entry.pack()
+start_node_entry.pack()
+end_label.pack()
+end_node_entry.pack()
 
 # Tạo nút để tìm đường đi với điểm đến mới
 calculate_button = tk.Button(
     root,
-    text="Tìm đường đi ngắn nhất",
+    text="Tìm đường đi ngắn nhất (Dijkstra)",
     command=lambda: calculate_shortest_path_and_draw(),
 )
 calculate_button.pack()
+
+# Tạo nút để tìm đường đi với điểm đến mới
+calculate_button = tk.Button(
+    root,
+    text="Tìm đường đi ngắn nhất (BFS)",
+    command=lambda: calculate_shortest_path_and_draw_bfs(),
+)
+calculate_button.pack()
+
+# Tạo nút để tìm đường đi với điểm đến mới
+calculate_button = tk.Button(
+    root,
+    text="Tìm đường đi ngắn nhất (DFS)",
+    command=lambda: calculate_shortest_path_and_draw_dfs(),
+)
+calculate_button.pack()
+
 
 # Tạo các nút để chuyển đổi hình ảnh và giải bài toán
 button1 = tk.Button(
@@ -183,26 +254,67 @@ def clear_shortest_path():
         shortest_path_drawn = False
     result_label.config(text="")
 
-# Tạo đối tượng Graph và thêm cạnh
-G = nx.DiGraph()
+graph_obj = Graph()
 edges = [
-    # ("0", "1", 0.83), ("0", "2", 1.6), ("0", "4", 0.5),
-    # ("1", "0", 0.83), ("1", "5", 0.75), ("1", "12", 1.05),
-    # ("2", "12", 0.25), ("2", "11", 0.12), ("2", "10", 0.38),
-    # ("3", "0", 1.2), ("3", "11", 0.54), ("3", "4", 1.07),
-    # ("4", "0", 0.5),
-    # ("5", "6", 0.94), ("5", "12", 0.88),
-    # ("6", "7", 1.06), ("6", "5", 0.94),("6", "9", 0.97),
-    # ("7", "13", 1.1), ("7", "8", 0.63), ("7", "6", 1.07),
-    # ("8", "9", 1.3), ("8", "7", 0.63), ("8", "13", 0.89),
-    # ("9", "6", 0.97), ("9", "10", 0.43), ("9", "8", 1.3),
-    # ("10", "9", 0.43), ("10", "11", 0.37), ("10", "12", 0.51),
-    # ("11", "3", 0.54), ("11", "2", 0.12),
-    # ("12", "10", 0.51), ("12", "5", 0.88), ("12", "2", 0.25), ("12", "1", 1.05),
+    ("0", "1", 0.83), ("0", "2", 1.6), ("0", "4", 0.5),
+    ("1", "0", 0.83), ("1", "5", 0.75), ("1", "12", 1.05),
+    ("2", "12", 0.25), ("2", "11", 0.12), ("2", "10", 0.38),
+    ("3", "0", 1.2), ("3", "11", 0.54), ("3", "4", 1.07),
+    ("4", "0", 0.5),
+    ("5", "6", 0.94), ("5", "12", 0.88),
+    ("6", "7", 1.06), ("6", "5", 0.94),("6", "9", 0.97),
+    ("7", "13", 1.1), ("7", "8", 0.63), ("7", "6", 1.07),
+    ("8", "9", 1.3), ("8", "7", 0.63), ("8", "13", 0.89),
+    ("9", "6", 0.97), ("9", "10", 0.43), ("9", "8", 1.3),
+    ("10", "9", 0.43), ("10", "11", 0.37), ("10", "12", 0.51),
+    ("11", "3", 0.54), ("11", "2", 0.12),
+    ("12", "10", 0.51), ("12", "5", 0.88), ("12", "2", 0.25), ("12", "1", 1.05),
+    ("13", "7", 1.1),("13", "8", 0.89)
 ]
 
+node_labels = {
+    "0": "2 Bis",
+    "1": "An Dương Vương",
+    "2": "Nguyễn Văn Linh",
+    "3": "Võ Văn Kiệt",
+    "4": "Điện Biên Phủ",
+    "5": "Ngô Gia Tự",
+    "6": "Trần Phú",
+    "7": "Ktx Đại học Sài Gòn",
+    "8": "McDonald's",
+    "9": "KFC",
+    "10": "Thảo cầm viên",
+    "11": "Dinh Độc Lập",
+    "12": "Công viên Tao Đàn",
+    "13": "Đại học Sài Gòn",
+}
+
+# Tạo một từ điển với tọa độ tùy chỉnh cho các nút    
+node_positions = {
+        "0": (500,122),
+        "1": (290,190),
+        "2": (144,-103),
+        "3": (283,-109),
+        "4": (545,0.3),
+        "5": (85,202),
+        "6": (-131,77),
+        "7": (-380,-62),
+        "8": (-400,-233),
+        "9": (-62,-174),
+        "10": (52,-152),
+        "11": (150,-134),
+        "12": (128,-42),
+        "13": (-630,-206),
+    }
+
 for start, end, weight in edges:
-    G.add_edge(start, end, weight=weight)
+    graph_obj.add_edge(start, end, weight)
+
+# Create a NetworkX graph for visualization
+G = nx.DiGraph()
+for edge in edges:
+    start, end, distance = edge
+    G.add_edge(start, end, weight=distance)
 
 # Khởi chạy giao diện người dùng
 root.mainloop()

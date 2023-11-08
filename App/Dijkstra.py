@@ -1,9 +1,9 @@
-from collections import deque
 import tkinter as tk
 from PIL import Image, ImageTk
 import networkx as nx
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+
 
 # Hàm để chuyển đổi hình ảnh thành đối tượng ImageTk
 def load_image(image_path, width, height):
@@ -20,54 +20,68 @@ class Graph:
             self.graph[start] = {}
         self.graph[start][end] = weight
 
-    def dfs_shortest_path(self, start, end, path=[]):
-        path = path + [start]
-        if start == end:
-            return path
+    def dijkstra(self, start, end):
+        distances = {vertex: float("infinity") for vertex in self.graph}
+        previous_vertices = {}
+        distances[start] = 0
 
-        shortest_path = None
-        for neighbor in self.graph[start]:
-            if neighbor not in path:
-                new_path = self.dfs_shortest_path(neighbor, end, path)
-                if new_path:
-                    if not shortest_path or len(new_path) < len(shortest_path):
-                        shortest_path = new_path
+        vertices = self.graph.copy()
 
-        return shortest_path
+        while vertices:
+            current_vertex = min(vertices, key=lambda vertex: distances[vertex])
+            vertices.pop(current_vertex)
+
+            for neighbor, weight in self.graph[current_vertex].items():
+                potential_route = distances[current_vertex] + weight
+
+                if potential_route < distances[neighbor]:
+                    distances[neighbor] = potential_route
+                    previous_vertices[neighbor] = current_vertex
+
+        path, current_vertex = [], end
+        while current_vertex != start:
+            path.insert(0, current_vertex)
+            current_vertex = previous_vertices[current_vertex]
+        path.insert(0, start)
+        return path
 
 # Hàm để cập nhật hình ảnh trên label
 def update_image(new_image):
     label.config(image=new_image)
     label.image = new_image
-
-
+        
 def calculate_shortest_path_and_draw(shortest_only=True):
     start_node = start_node_entry.get()
     end_node = end_node_entry.get()
 
-    shortest_path = graph_obj.dfs_shortest_path(start_node, end_node)
+    # Use Dijkstra's algorithm to find the shortest path
+    shortest_path = graph_obj.dijkstra(start_node, end_node)
+
     if shortest_only:
         result_label.config(text=f"Đường đi ngắn nhất từ {start_node} đến {end_node}: {' -> '.join(shortest_path)}")
-        result_label.update()  # Cập nhật giao diện người dùng
+        result_label.update()  # Update the user interface
 
         total_distance = 0
-        distances_text = "Với khoảng cách "
+        distances_text = f"Với khoảng cách "
+
+        # Calculate the total distance of the path
         for i in range(len(shortest_path) - 1):
             start_node, end_node = shortest_path[i], shortest_path[i + 1]
             distance = graph_obj.graph[start_node][end_node]
             total_distance += distance
-        distances_text += f"{total_distance}"
-        result_label.config(text=result_label.cget("text") + "\n" + distances_text)
 
-    # Đọc hình ảnh gốc
+        distances_text += f"{total_distance: .2f}"
+        result_label.config(text=result_label.cget("text") + "\n" + distances_text)
+    
+    # Load the original image
     img = mpimg.imread("default1.png")
     img_width = img.shape[1]
     img_height = img.shape[0]
-
-    # Tính toán extent dựa trên kích thước hình ảnh gốc
+    
+    # Calculate the extent based on the original image size
     extent = [-img_width / 2, img_width / 2, -img_height / 2, img_height / 2]
 
-    # Vẽ đồ thị trên hình ảnh gốc
+    # Draw the graph on the original image
     plt.imshow(img, extent=extent)
     pos = nx.spring_layout(G, pos=node_positions, fixed=node_positions.keys(), weight='weight')
     labels = nx.get_edge_attributes(G, 'weight')
@@ -84,18 +98,19 @@ def calculate_shortest_path_and_draw(shortest_only=True):
     nx.draw_networkx_labels(G, labels=node_labels, pos=label_pos, font_size=10, font_color="black")
 
     if shortest_only:
-        # Vẽ đường đi ngắn nhất
+        # Draw the shortest path
         path_edges = [(shortest_path[i], shortest_path[i + 1]) for i in range(len(shortest_path) - 1)]
         nx.draw_networkx_edges(G, pos, edgelist=path_edges, edge_color='red', width=1.5)
-
-    plt.axis('off')  # Tắt các trục
-    plt.show()
-
+        
+    plt.axis('off')  # Turn off the axes
+    plt.show()        
+        
 # Tạo cửa sổ tkinter
 root = tk.Tk()
 root.title("Chuyển đổi hình ảnh và Giải bài toán")
 
 # Tải hình ảnh ban đầu và các hình ảnh khác
+
 new_image_width = 600
 new_image_height = 280
 image1 = load_image("default1.png", new_image_width, new_image_height)
@@ -104,6 +119,7 @@ image1 = load_image("default1.png", new_image_width, new_image_height)
 label = tk.Label(root, image=image1)
 label.pack()
 
+# Tạo label và khung nhập chữ cho điểm bắt đầu mới
 start_label = tk.Label(root, text="Từ:")
 start_node_entry = tk.Entry(root)
 end_label = tk.Label(root, text="Đến:")
@@ -115,16 +131,33 @@ start_node_entry.pack()
 end_label.pack()
 end_node_entry.pack()
 
+# Tạo nút để tìm đường đi với điểm đến mới
+calculate_button = tk.Button(
+    root,
+    text="Tìm đường đi ngắn nhất",
+    command=lambda: calculate_shortest_path_and_draw(),
+)
+calculate_button.pack()
+
 # Tạo các nút để chuyển đổi hình ảnh và giải bài toán
-button2 = tk.Button(root, text="Hiển thị Tất cả Đường", command=lambda: calculate_shortest_path_and_draw(shortest_only=False))
-button1 = tk.Button(root, text="Đường đi ngắn nhất", command=calculate_shortest_path_and_draw)
+button1 = tk.Button(
+    root,
+    text="Hiển thị Đường đi",
+    command=lambda: calculate_shortest_path_and_draw(shortest_only=False),
+)
+
 result_label = tk.Label(root, text="")
 result_label.pack()
-
-button2.pack()
 button1.pack()
 
-# Tạo đối tượng Graph và thêm cạnh
+def clear_shortest_path():
+    global shortest_path, shortest_path_drawn
+    shortest_path = []
+    if shortest_path_drawn:
+        plt.clf()
+        shortest_path_drawn = False
+    result_label.config(text="")
+
 graph_obj = Graph()
 edges = [
     ("0", "1", 0.83), ("0", "2", 1.6), ("0", "4", 0.5),

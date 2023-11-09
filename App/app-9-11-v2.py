@@ -6,6 +6,8 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
 
+
+
 # Hàm để chuyển đổi hình ảnh thành đối tượng ImageTk
 def load_image(image_path, width, height):
     image = Image.open(image_path)
@@ -188,25 +190,25 @@ def draw_graph(G, node_positions, node_labels, shortest_path=None):
 root = tk.Tk()
 root.title("Tìm đường đi ngắn nhất")
 
-new_image_width = 600
-new_image_height = 280
-image1 = load_image("default1.png", new_image_width, new_image_height)
+# new_image_width = 600
+# new_image_height = 280
+# image1 = load_image("default1.png", new_image_width, new_image_height)
 
-# Tạo label để hiển thị hình ảnh ban đầu
-label = tk.Label(root, image=image1)
-label.grid(row=0, column=0, columnspan=2)
+# # Tạo label để hiển thị hình ảnh ban đầu
+# label = tk.Label(root, image=image1)
+# label.grid(row=0, column=0, columnspan=1)
 
 # Tạo label và khung nhập chữ cho điểm bắt đầu mới
-start_label = tk.Label(root, text="Từ:")
+start_label = tk.Label(root, text="Điểm bắt đầu:")
 start_node_entry = tk.Entry(root)
-end_label = tk.Label(root, text="Đến:")
+end_label = tk.Label(root, text="Điểm đến:")
 end_node_entry = tk.Entry(root)
 start_node_entry.insert(0, "0")  # Giá trị mặc định cho điểm bắt đầu
 end_node_entry.insert(0, "13")  # Giá trị mặc định cho điểm kết thúc
-start_label.grid(row=1, column=0, padx=5, pady=5, sticky="e")
-start_node_entry.grid(row=1, column=1, padx=5, pady=5, sticky="w")
-end_label.grid(row=2, column=0, padx=5, pady=5, sticky="e")
-end_node_entry.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+start_label.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+start_node_entry.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
+end_label.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+end_node_entry.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
 
 # Tạo nút để tìm đường đi với điểm đến mới
 calculate_button = tk.Button(
@@ -214,7 +216,7 @@ calculate_button = tk.Button(
     text="Tìm đường đi ngắn nhất (Dijkstra)",
     command=lambda: calculate_shortest_path_and_draw(),
 )
-calculate_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+calculate_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5)
 
 # Tạo nút để tìm đường đi với điểm đến mới
 calculate_button = tk.Button(
@@ -222,7 +224,7 @@ calculate_button = tk.Button(
     text="Tìm đường đi ngắn nhất (BFS)",
     command=lambda: calculate_shortest_path_and_draw_bfs(),
 )
-calculate_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
+calculate_button.grid(row=6, column=0, columnspan=2, padx=5, pady=5)
 
 # Tạo nút để tìm đường đi với điểm đến mới
 calculate_button = tk.Button(
@@ -230,7 +232,7 @@ calculate_button = tk.Button(
     text="Tìm đường đi ngắn nhất (DFS)",
     command=lambda: calculate_shortest_path_and_draw_dfs(),
 )
-calculate_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5)
+calculate_button.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
 
 # Tạo các nút để chuyển đổi hình ảnh và giải bài toán
 button1 = tk.Button(
@@ -240,15 +242,15 @@ button1 = tk.Button(
 )
 
 result_label = tk.Label(root, text="")
-result_label.grid(row=6, column=0, columnspan=2, padx=5, pady=5)
-button1.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
+result_label.grid(row=8, column=0, columnspan=2, padx=5, pady=5)
+button1.grid(row=9, column=0, columnspan=2, padx=5, pady=5)
 
-for i in range(8):
+for i in range(11):  # Thay đổi chỉ số hàng tùy thuộc vào số lượng hàng bạn có
     root.grid_rowconfigure(i, weight=1)
 
 for j in range(2):
     root.grid_columnconfigure(j, weight=1)
-    
+
 def clear_shortest_path():
     global shortest_path, shortest_path_drawn
     shortest_path = []
@@ -256,7 +258,6 @@ def clear_shortest_path():
         plt.clf()
         shortest_path_drawn = False
     result_label.config(text="")
-
 
 graph_obj = Graph()
 edges = [
@@ -312,6 +313,83 @@ node_positions = {
     }
 for start, end, weight in edges:
     graph_obj.add_edge(start, end, weight)
+    
+    
+      
+def toggle_edge_weight_visibility():
+    if frame.winfo_ismapped():
+        frame.grid_remove()
+    else:
+        frame.grid()
+
+        
+
+def update_edge_weights(graph_obj, edges, entries):
+    for i, entry in enumerate(entries):
+        start, end, _ = edges[i]
+        try:
+            weight = float(entry.get())
+            if start in graph_obj.graph and end in graph_obj.graph[start]:
+                graph_obj.graph[start][end] = weight
+            else:
+                # Có thể xử lý tạo cạnh nếu không tồn tại
+                graph_obj.add_edge(start, end, weight)
+        except ValueError:
+            # Xử lý lỗi nhập không phải số
+            pass
+
+    # Cập nhật biểu đồ với trọng số mới
+    update_networkx_graph(G, graph_obj.graph)  # Thêm dòng này để cập nhật biểu đồ
+    draw_graph(G, node_positions, node_labels)
+
+def update_networkx_graph(G, graph_data):
+    G.clear()  # Xóa tất cả cạnh trong biểu đồ NetworkX
+    for start, end_weights in graph_data.items():
+        for end, weight in end_weights.items():
+            G.add_edge(start, end, weight=weight)  # Thêm cạnh mới với trọng số
+
+
+# Tạo Frame để chứa phần nhập trọng số và nút "Xác nhận"
+frame = tk.Frame(root)
+
+# Tạo danh sách Entry widgets cho trọng số của các cạnh
+edge_weight_entries = []
+
+# Đặt biến để theo dõi hàng và cột
+current_row = 0
+current_column = 0
+entries_per_row = 4  # Số lượng cặp Label và Entry widgets trên mỗi hàng
+
+for i, (start, end, weight) in enumerate(edges):
+    label = tk.Label(frame, text=f"({start} -> {end}):")
+    entry = tk.Entry(frame)
+    entry.insert(0, str(weight))  # Set giá trị mặc định cho Entry
+    edge_weight_entries.append(entry)
+
+    label.grid(row=current_row, column=current_column, padx=5, pady=5, sticky="e")
+    entry.grid(row=current_row, column=current_column + 1, padx=5, pady=5, sticky="w")
+
+    current_column += 2
+    if (i + 1) % entries_per_row == 0:
+        current_row += 1
+        current_column = 0
+
+# Tạo nút "Xác nhận" để cập nhật trọng số
+confirm_button = tk.Button(
+    frame,
+    text="Xác nhận Trọng số",
+    command=lambda: update_edge_weights(graph_obj, edges, edge_weight_entries),
+)
+confirm_button.grid(row=current_row, column=current_column, columnspan=2, padx=5, pady=5)
+
+# Grid frame vào root window
+frame.grid(row=11, column=0, padx=10, pady=10)
+
+# Tạo nút "Ẩn/Hiện" để ẩn và hiện phần nhập trọng số
+toggle_button = tk.Button(root, text="Hiện/Ẩn Trọng số", command=toggle_edge_weight_visibility)
+toggle_button.grid(row=10, column=0,columnspan=2, padx=5, pady=5)
+
+frame.grid_remove()
 
 # Create a NetworkX graph for visualization
 G = nx.DiGraph()

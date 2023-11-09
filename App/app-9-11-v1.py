@@ -4,6 +4,8 @@ from PIL import Image, ImageTk
 import networkx as nx
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import tkinter.simpledialog
+
 
 
 # Hàm để chuyển đổi hình ảnh thành đối tượng ImageTk
@@ -194,7 +196,7 @@ image1 = load_image("default1.png", new_image_width, new_image_height)
 
 # Tạo label để hiển thị hình ảnh ban đầu
 label = tk.Label(root, image=image1)
-label.grid(row=0, column=0, columnspan=2)
+label.grid(row=0, column=0, columnspan=5)
 
 # Tạo label và khung nhập chữ cho điểm bắt đầu mới
 start_label = tk.Label(root, text="Từ:")
@@ -248,7 +250,7 @@ for i in range(8):
 
 for j in range(2):
     root.grid_columnconfigure(j, weight=1)
-    
+
 def clear_shortest_path():
     global shortest_path, shortest_path_drawn
     shortest_path = []
@@ -256,7 +258,6 @@ def clear_shortest_path():
         plt.clf()
         shortest_path_drawn = False
     result_label.config(text="")
-
 
 graph_obj = Graph()
 edges = [
@@ -312,6 +313,87 @@ node_positions = {
     }
 for start, end, weight in edges:
     graph_obj.add_edge(start, end, weight)
+    
+    
+    
+    
+    
+    
+    
+def toggle_edge_weight_visibility():
+    if frame.winfo_ismapped():
+        frame.grid_remove()
+    else:
+        frame.grid()
+
+def update_edge_weights(graph_obj, edges, entries):
+    for i, entry in enumerate(entries):
+        start, end, _ = edges[i]
+        try:
+            weight = float(entry.get())
+            if start in graph_obj.graph and end in graph_obj.graph[start]:
+                graph_obj.graph[start][end] = weight
+            else:
+                # Có thể xử lý tạo cạnh nếu không tồn tại
+                graph_obj.add_edge(start, end, weight)
+        except ValueError:
+            # Xử lý lỗi nhập không phải số
+            pass
+
+    # Cập nhật biểu đồ với trọng số mới
+    update_networkx_graph(G, graph_obj.graph)  # Thêm dòng này để cập nhật biểu đồ
+    draw_graph(G, node_positions, node_labels)
+
+def update_networkx_graph(G, graph_data):
+    G.clear()  # Xóa tất cả cạnh trong biểu đồ NetworkX
+    for start, end_weights in graph_data.items():
+        for end, weight in end_weights.items():
+            G.add_edge(start, end, weight=weight)  # Thêm cạnh mới với trọng số
+
+root = tk.Tk()
+root.title("Ứng dụng Graph")
+
+# Tạo Frame để chứa phần nhập trọng số và nút "Xác nhận"
+frame = tk.Frame(root)
+
+# Tạo danh sách Entry widgets cho trọng số của các cạnh
+edge_weight_entries = []
+
+# Đặt biến để theo dõi hàng và cột
+current_row = 0
+current_column = 0
+entries_per_row = 5  # Số lượng cặp Label và Entry widgets trên mỗi hàng
+
+for i, (start, end, weight) in enumerate(edges):
+    label = tk.Label(frame, text=f"Trọng số ({start} -> {end}):")
+    entry = tk.Entry(frame)
+    entry.insert(0, str(weight))  # Set giá trị mặc định cho Entry
+    edge_weight_entries.append(entry)
+
+    label.grid(row=current_row, column=current_column, padx=5, pady=5, sticky="e")
+    entry.grid(row=current_row, column=current_column + 1, padx=5, pady=5, sticky="w")
+
+    current_column += 2
+    if (i + 1) % entries_per_row == 0:
+        current_row += 1
+        current_column = 0
+
+# Tạo nút "Xác nhận" để cập nhật trọng số
+confirm_button = tk.Button(
+    frame,
+    text="Xác nhận Trọng số",
+    command=lambda: update_edge_weights(graph_obj, edges, edge_weight_entries),
+)
+confirm_button.grid(row=current_row, column=current_column, columnspan=2, padx=5, pady=5)
+
+# Grid frame vào root window
+frame.grid(row=0, column=0, padx=10, pady=10)
+
+# Tạo nút "Ẩn/Hiện" để ẩn và hiện phần nhập trọng số
+toggle_button = tk.Button(root, text="Ẩn/Hiện Trọng số", command=toggle_edge_weight_visibility)
+toggle_button.grid(row=1, column=0, padx=5, pady=5)
+
+frame.grid_remove()
 
 # Create a NetworkX graph for visualization
 G = nx.DiGraph()

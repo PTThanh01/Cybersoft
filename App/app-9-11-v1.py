@@ -331,7 +331,14 @@ def update_edge_weights(graph_obj, edges, entries):
         start, end, _ = edges[i]
         try:
             weight = float(entry.get())
-            if start in graph_obj.graph and end in graph_obj.graph[start]:
+            
+            # Check if the entered weight is 0, and remove the edge if true
+            if weight == 0 and start in graph_obj.graph and end in graph_obj.graph[start]:
+                del graph_obj.graph[start][end]
+                # You might also want to handle the case where the end node has no incoming edges
+                if not graph_obj.graph[start]:
+                    del graph_obj.graph[start]
+            elif start in graph_obj.graph and end in graph_obj.graph[start]:
                 graph_obj.graph[start][end] = weight
             else:
                 # Có thể xử lý tạo cạnh nếu không tồn tại

@@ -157,10 +157,15 @@ def draw_graph(G, node_positions, node_labels, shortest_path=None):
     img_height = img.shape[0]
 
     # Calculate the extent based on the original image size
-    extent = [-img_width / 2, img_width / 2, -img_height / 2, img_height / 2]
+    extent = [-img_width / 1, img_width / 1, -img_height / 1, img_height / 1]
+    
+    fig, ax = plt.subplots()
+
+# Set margins for the subplot
+    plt.subplots_adjust(left=0, bottom=0, right=1, top=1)
 
     # Draw the graph on the original image
-    plt.imshow(img, extent=extent)
+    ax.imshow(img, extent=extent)
     pos = nx.spring_layout(G, pos=node_positions, fixed=node_positions.keys(), weight='weight')
     labels = nx.get_edge_attributes(G, 'weight')
     nx.draw_networkx_nodes(G, pos, node_color='blue')

@@ -4,6 +4,7 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import customtkinter as ctk
+from customtkinter import CTkScrollableFrame
 
 # Create window customtkinter
 root = ctk.CTk()
@@ -76,7 +77,13 @@ def on_window_resize(event):
     if hasattr(on_window_resize, "_after_id"):
         root.after_cancel(on_window_resize._after_id)
     on_window_resize._after_id = root.after(200, lambda: draw_graph(G, node_positions))
-
+    
+# Function to load and resize images
+def load_and_resize_image(image_path, width, height):
+    image = Image.open(image_path)
+    resized_image = image.resize((width, height))
+    return ImageTk.PhotoImage(resized_image)
+        
 def draw_graph(G, node_positions, shortest_path=None, label_pos_offset=20):
     ax.clear()
     img = mpimg.imread("default1.png")
@@ -144,7 +151,6 @@ initial_height = 600
 plot_frame = ctk.CTkFrame(root)
 plot_frame.grid(row=0, column=2, rowspan=13, padx=10, pady=10)
 fig, ax = plt.subplots(figsize=(initial_width / 100, initial_height / 100), dpi=100)
-# fig, ax = plt.subplots()
 canvas = FigureCanvasTkAgg(fig, master=plot_frame)
 canvas_widget = canvas.get_tk_widget()
 canvas_widget.pack(side=ctk.TOP, fill=ctk.BOTH, expand=1)
@@ -152,18 +158,42 @@ canvas_widget.pack(side=ctk.TOP, fill=ctk.BOTH, expand=1)
 destinations = ["Sân bay","Bệnh viện Chợ Rãy","Đại học Sài Gòn","BHD Star","Ktx Đại học Sài Gòn","McDonald's","KFC","Thảo cầm viên","Dinh Độc Lập","Công viên Tao Đàn","Nhà thờ","Bảo tàng","An Dương Vương",]
 destination_buttons = []
 
+image_paths = {
+    "Sân bay": "z4.png",
+    "Bệnh viện Chợ Rãy": "z4.png",
+    "Đại học Sài Gòn": "z4.png",
+    "2 Bis": "z4.png",
+    "An Dương Vương": "z4.png",
+    "BHD Star": "z4.png",
+    "Nhà thờ": "z4.png",
+    "Bảo tàng": "z4.png",
+    "Sân bay": "z4.png",
+    "Ktx Đại học Sài Gòn": "z4.png",
+    "McDonald's": "z4.png",
+    "Thảo cầm viên": "z4.png",
+    "Dinh Độc Lập": "z4.png",
+    "Công viên Tao Đàn": "z4.png",
+    "KFC": "z4.png", 
+}
+
+scrollable_dest_frame = CTkScrollableFrame(root, label_text="Hotel")
+scrollable_dest_frame.grid(row=0, column=0, padx=5, pady=5, rowspan=13, columnspan=2, sticky="nsew")
+destination_images = {destination: load_and_resize_image(path, 80, 80) for destination, path in image_paths.items()}
+
 for i, destination in enumerate(destinations):
     button = ctk.CTkButton(
-        root,
+        scrollable_dest_frame,
         text=destination,
+        compound="top",  # Display image above the text
+        image=destination_images.get(destination),
         command=lambda d=destination: calculate_shortest_path_and_draw(destination=d),
     )
-    button.grid(row=2 + i, column=0, columnspan=2, padx=5, pady=5)
+    button.grid(row=i, column=0, padx=5, pady=5, sticky="ew")
     destination_buttons.append(button)
 
 result_label = ctk.CTkLabel(root, text="")
 result_label.grid(row=14, column=2, padx=5, pady=5)
-
+ 
 graph_obj = Graph()
 # Create a list of edges
 edges = [

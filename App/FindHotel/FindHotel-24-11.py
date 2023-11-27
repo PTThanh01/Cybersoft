@@ -120,10 +120,10 @@ def draw_graph(G, node_positions, shortest_path=None, label_pos_offset=20):
         subgraph = G.subgraph(path_nodes)
         
         # Draw only nodes and edges that are part of the shortest path
-        nx.draw_networkx_nodes(subgraph, pos, node_color="blue", ax=ax)
+        nx.draw_networkx_nodes(subgraph, pos, node_color="blue",node_size=20, ax=ax)
         
         # Draw directed edges for the shortest path
-        nx.draw_networkx_edges(subgraph, pos, edgelist=path_edges, edge_color="red", width=2,ax=ax)
+        nx.draw_networkx_edges(subgraph, pos, edgelist=path_edges, edge_color="red", width=3,ax=ax)
         
         # Draw edge labels for the shortest path
         labels = {(edge[0], edge[1]): G[edge[0]][edge[1]]['weight'] for edge in path_edges}

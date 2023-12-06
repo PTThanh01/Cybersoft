@@ -107,7 +107,7 @@ def calculate_shortest_path_and_draw(shortest_only=True):
         
 # Tạo cửa sổ tkinter
 root = tk.Tk()
-root.title("Chuyển đổi hình ảnh và Giải bài toán")
+root.title("Dijkstra")
 
 # Tải hình ảnh ban đầu và các hình ảnh khác
 

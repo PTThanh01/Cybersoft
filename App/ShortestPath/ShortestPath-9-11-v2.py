@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 import networkx as nx
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 
 
 
@@ -105,10 +105,10 @@ def calculate_shortest_path_and_draw(shortest_only=True):
     # Tìm đường đi ngắn nhất bằng thuật toán Dijkstra
     if shortest_only:
         shortest_path, total_distance = calculate_shortest_path(graph_obj, start_node, end_node)
-        result_label.config(text=f"(Dijkstra)Với khoảng cách {total_distance:.2f} km")
+        result_label.config(text=f"Đường đi ngắn nhất từ {start_node} đến {end_node}: {' -> '.join(shortest_path)}\nVới khoảng cách {total_distance:.2f}")
         result_label.update()  # Cập nhật giao diện người dùng
 
-    draw_graph(G, node_positions, shortest_path if shortest_only else None)
+    draw_graph(G, node_positions, node_labels, shortest_path if shortest_only else None)
 
 
 def calculate_shortest_path_and_draw_bfs(shortest_only=True):
@@ -117,10 +117,10 @@ def calculate_shortest_path_and_draw_bfs(shortest_only=True):
 
     if shortest_only:
         shortest_path, total_distance = calculate_shortest_path(graph_obj, start_node, end_node, method="bfs")
-        result_label.config(text=f"(BFS)Với khoảng cách {total_distance} km")
+        result_label.config(text=f"Đường đi ngắn nhất từ {start_node} đến {end_node}: {' -> '.join(shortest_path)}\nVới khoảng cách {total_distance}")
         result_label.update()  # Cập nhật giao diện người dùng
 
-    draw_graph(G, node_positions, shortest_path if shortest_only else None)
+    draw_graph(G, node_positions, node_labels, shortest_path if shortest_only else None)
 
 
 def calculate_shortest_path_and_draw_dfs(shortest_only=True):
@@ -129,10 +129,10 @@ def calculate_shortest_path_and_draw_dfs(shortest_only=True):
 
     if shortest_only:
         shortest_path, total_distance = calculate_shortest_path(graph_obj, start_node, end_node, method="dfs")
-        result_label.config(text=f"(DFS)Với khoảng cách {total_distance} km")
+        result_label.config(text=f"Đường đi ngắn nhất từ {start_node} đến {end_node}: {' -> '.join(shortest_path)}\nVới khoảng cách {total_distance}")
         result_label.update()  # Cập nhật giao diện người dùng
 
-    draw_graph(G, node_positions, shortest_path if shortest_only else None)
+    draw_graph(G, node_positions, node_labels, shortest_path if shortest_only else None)
 
 
 def calculate_shortest_path(graph_obj, start_node, end_node, method="dijkstra"):
@@ -152,64 +152,59 @@ def calculate_shortest_path(graph_obj, start_node, end_node, method="dijkstra"):
     return shortest_path, total_distance
 
 
-
-
-def draw_graph(G, node_positions, shortest_path=None, label_pos_offset=20):   
-    ax.clear()
+def draw_graph(G, node_positions, node_labels, shortest_path=None):
     # Load the original image
     img = mpimg.imread("default1.png")
     img_width = img.shape[1]
     img_height = img.shape[0]
-    plt.subplots_adjust(left=0, bottom=0, right=1, top=1)
 
     # Calculate the extent based on the original image size
     extent = [-img_width / 2, img_width / 2, -img_height / 2, img_height / 2]
 
-    # Draw the background image
-    ax.imshow(img, extent=extent)
-
-    # Draw the graph on the Matplotlib figure
+    # Draw the graph on the original image
+    plt.imshow(img, extent=extent)
     pos = nx.spring_layout(G, pos=node_positions, fixed=node_positions.keys(), weight='weight')
     labels = nx.get_edge_attributes(G, 'weight')
-    nx.draw_networkx_nodes(G, pos, node_color='blue', ax=ax)
-    nx.draw_networkx_edges(G, pos, ax=ax)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, ax=ax)
+    nx.draw_networkx_nodes(G, pos, node_color='blue')
+    nx.draw_networkx_edges(G, pos)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)
+    nx.draw_networkx_labels(G, pos)
+    pos = nx.spring_layout(G, pos=node_positions, fixed=node_positions.keys(), weight='weight')
 
     # Adjust the label positions
-    label_pos = {node: (pos[node][0], pos[node][1] + label_pos_offset) for node in node_positions}
+    label_pos = {node: (pos[node][0], pos[node][1] + 20) for node in node_labels}
 
     # Add labels to nodes with adjusted positions
-    nx.draw_networkx_labels(G, pos=label_pos, font_size=10, font_color="black", ax=ax)
+    nx.draw_networkx_labels(G, labels=node_labels, pos=label_pos, font_size=10, font_color="black")
 
     if shortest_path:
         # Draw the shortest path
         path_edges = [(shortest_path[i], shortest_path[i + 1]) for i in range(len(shortest_path) - 1)]
-        nx.draw_networkx_edges(G, pos, edgelist=path_edges, edge_color='red', width=1.1, ax=ax)
+        nx.draw_networkx_edges(G, pos, edgelist=path_edges, edge_color='red', width=1.1)
 
-    ax.axis('off')
-
-    # Update the Matplotlib plot on the Tkinter canvas
-    canvas.draw()
+    plt.axis('off')
+    plt.show()
     
             
 # Tạo cửa sổ tkinter
 root = tk.Tk()
 root.title("Tìm đường đi ngắn nhất")
 
-plot_frame = tk.Frame(root)
-plot_frame.grid(row=0, column=2, rowspan=13, padx=10, pady=10)
-fig, ax = plt.subplots()
-canvas = FigureCanvasTkAgg(fig, master=plot_frame)
-canvas_widget = canvas.get_tk_widget()
-canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+# new_image_width = 600
+# new_image_height = 280
+# image1 = load_image("default1.png", new_image_width, new_image_height)
+
+# # Tạo label để hiển thị hình ảnh ban đầu
+# label = tk.Label(root, image=image1)
+# label.grid(row=0, column=0, columnspan=1)
 
 # Tạo label và khung nhập chữ cho điểm bắt đầu mới
 start_label = tk.Label(root, text="Điểm bắt đầu:")
 start_node_entry = tk.Entry(root)
 end_label = tk.Label(root, text="Điểm đến:")
 end_node_entry = tk.Entry(root)
-start_node_entry.insert(0, "2 Bis")  # Giá trị mặc định cho điểm bắt đầu
-end_node_entry.insert(0, "Đại học Sài Gòn")  # Giá trị mặc định cho điểm kết thúc
+start_node_entry.insert(0, "0")  # Giá trị mặc định cho điểm bắt đầu
+end_node_entry.insert(0, "13")  # Giá trị mặc định cho điểm kết thúc
 start_label.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
 start_node_entry.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
 end_label.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
@@ -250,54 +245,71 @@ result_label = tk.Label(root, text="")
 result_label.grid(row=8, column=0, columnspan=2, padx=5, pady=5)
 button1.grid(row=9, column=0, columnspan=2, padx=5, pady=5)
 
-# for i in range(11):  # Thay đổi chỉ số hàng tùy thuộc vào số lượng hàng bạn có
-#     root.grid_rowconfigure(i, weight=1)
+for i in range(11):  # Thay đổi chỉ số hàng tùy thuộc vào số lượng hàng bạn có
+    root.grid_rowconfigure(i, weight=1)
 
-# for j in range(2):
-#     root.grid_columnconfigure(j, weight=1)
+for j in range(2):
+    root.grid_columnconfigure(j, weight=1)
 
-# def clear_shortest_path():
-#     global shortest_path, shortest_path_drawn
-#     shortest_path = []
-#     if shortest_path_drawn:
-#         plt.clf()
-#         shortest_path_drawn = False
-#     result_label.config(text="")
+def clear_shortest_path():
+    global shortest_path, shortest_path_drawn
+    shortest_path = []
+    if shortest_path_drawn:
+        plt.clf()
+        shortest_path_drawn = False
+    result_label.config(text="")
 
 graph_obj = Graph()
 edges = [
-    ("2 Bis", "An Dương Vương", 0.83), ("2 Bis", "BHD Star", 1.6), ("2 Bis", "Bảo tàng", 0.5),
-    ("An Dương Vương", "2 Bis", 0.83), ("An Dương Vương", "Sân bay", 0.75), ("An Dương Vương", "Công viên Tao Đàn", 1.05),
-    ("BHD Star", "Công viên Tao Đàn", 0.25), ("BHD Star", "Dinh Độc Lập", 0.12), ("BHD Star", "Thảo cầm viên", 0.38),
-    ("Nhà thờ", "2 Bis", 1.2), ("Nhà thờ", "Dinh Độc Lập", 0.54), ("Nhà thờ", "Bảo tàng", 1.07),
-    ("Bảo tàng", "2 Bis", 0.5),
-    ("Sân bay", "Bệnh viện Chợ Rãy", 0.94), ("Sân bay", "Công viên Tao Đàn", 0.88),
-    ("Bệnh viện Chợ Rãy", "Ktx Đại học Sài Gòn", 1.06), ("Bệnh viện Chợ Rãy", "Sân bay", 0.94),("Bệnh viện Chợ Rãy", "KFC", 0.97),
-    ("Ktx Đại học Sài Gòn", "Đại học Sài Gòn", 1.1), ("Ktx Đại học Sài Gòn", "McDonald's", 0.63), ("Ktx Đại học Sài Gòn", "Bệnh viện Chợ Rãy", 1.07),
-    ("McDonald's", "KFC", 1.3), ("McDonald's", "Ktx Đại học Sài Gòn", 0.63), ("McDonald's", "Đại học Sài Gòn", 0.89),
-    ("KFC", "Bệnh viện Chợ Rãy", 0.97), ("KFC", "Thảo cầm viên", 0.43), ("KFC", "McDonald's", 1.3),
-    ("Thảo cầm viên", "KFC", 0.43), ("Thảo cầm viên", "Dinh Độc Lập", 0.37), ("Thảo cầm viên", "Công viên Tao Đàn", 0.51),
-    ("Dinh Độc Lập", "Nhà thờ", 0.54), ("Dinh Độc Lập", "BHD Star", 0.12),
-    ("Công viên Tao Đàn", "Thảo cầm viên", 0.51), ("Công viên Tao Đàn", "Sân bay", 0.88), ("Công viên Tao Đàn", "BHD Star", 0.25), ("Công viên Tao Đàn", "An Dương Vương", 1.05),
-    ("Đại học Sài Gòn", "Ktx Đại học Sài Gòn", 1.1),("Đại học Sài Gòn", "McDonald's", 0.89)
+    ("0", "1", 0.83), ("0", "2", 1.6), ("0", "4", 0.5),
+    ("1", "0", 0.83), ("1", "5", 0.75), ("1", "12", 1.05),
+    ("2", "12", 0.25), ("2", "11", 0.12), ("2", "10", 0.38),
+    ("3", "0", 1.2), ("3", "11", 0.54), ("3", "4", 1.07),
+    ("4", "0", 0.5),
+    ("5", "6", 0.94), ("5", "12", 0.88),
+    ("6", "7", 1.06), ("6", "5", 0.94),("6", "9", 0.97),
+    ("7", "13", 1.1), ("7", "8", 0.63), ("7", "6", 1.07),
+    ("8", "9", 1.3), ("8", "7", 0.63), ("8", "13", 0.89),
+    ("9", "6", 0.97), ("9", "10", 0.43), ("9", "8", 1.3),
+    ("10", "9", 0.43), ("10", "11", 0.37), ("10", "12", 0.51),
+    ("11", "3", 0.54), ("11", "2", 0.12),
+    ("12", "10", 0.51), ("12", "5", 0.88), ("12", "2", 0.25), ("12", "1", 1.05),
+    ("13", "7", 1.1),("13", "8", 0.89)
 ]
+
+node_labels = {
+    "0": "2 Bis",
+    "1": "An Dương Vương",
+    "2": "Nguyễn Văn Linh",
+    "3": "Võ Văn Kiệt",
+    "4": "Điện Biên Phủ",
+    "5": "Ngô Gia Tự",
+    "6": "Trần Phú",
+    "7": "Ktx Đại học Sài Gòn",
+    "8": "McDonald's",
+    "9": "KFC",
+    "10": "Thảo cầm viên",
+    "11": "Dinh Độc Lập",
+    "12": "Công viên Tao Đàn",
+    "13": "Đại học Sài Gòn",
+}
 
 # Tạo một từ điển với tọa độ tùy chỉnh cho các nút    
 node_positions = {
-        "2 Bis": (500,122),
-        "An Dương Vương": (290,190),
-        "BHD Star": (144,-103),
-        "Nhà thờ": (283,-109),
-        "Bảo tàng": (545,0.3),
-        "Sân bay": (85,202),
-        "Bệnh viện Chợ Rãy": (-131,77),
-        "Ktx Đại học Sài Gòn": (-380,-62),
-        "McDonald's": (-400,-233),
-        "KFC": (-62,-174),
-        "Thảo cầm viên": (52,-152),
-        "Dinh Độc Lập": (150,-134),
-        "Công viên Tao Đàn": (128,-42),
-        "Đại học Sài Gòn": (-630,-206),
+        "0": (500,122),
+        "1": (290,190),
+        "2": (144,-103),
+        "3": (283,-109),
+        "4": (545,0.3),
+        "5": (85,202),
+        "6": (-131,77),
+        "7": (-380,-62),
+        "8": (-400,-233),
+        "9": (-62,-174),
+        "10": (52,-152),
+        "11": (150,-134),
+        "12": (128,-42),
+        "13": (-630,-206),
     }
 for start, end, weight in edges:
     graph_obj.add_edge(start, end, weight)
@@ -333,7 +345,7 @@ def update_edge_weights(graph_obj, edges, entries):
 
     # Cập nhật biểu đồ với trọng số mới
     update_networkx_graph(G, graph_obj.graph)  # Thêm dòng này để cập nhật biểu đồ
-    draw_graph(G, node_positions)
+    draw_graph(G, node_positions, node_labels)
 
 def update_networkx_graph(G, graph_data):
     G.clear()  # Xóa tất cả cạnh trong biểu đồ NetworkX
@@ -341,8 +353,7 @@ def update_networkx_graph(G, graph_data):
         for end, weight in end_weights.items():
             G.add_edge(start, end, weight=weight)  # Thêm cạnh mới với trọng số
 
-root = tk.Tk()
-root.title("Thay đổi Trọng số")
+
 # Tạo Frame để chứa phần nhập trọng số và nút "Xác nhận"
 frame = tk.Frame(root)
 

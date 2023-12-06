@@ -117,7 +117,7 @@ end_node_entry.pack()
 
 # Tạo các nút để chuyển đổi hình ảnh và giải bài toán
 button2 = tk.Button(root, text="Hiển thị Tất cả Đường", command=lambda: calculate_shortest_path_and_draw(shortest_only=False))
-button1 = tk.Button(root, text="Đường đi ngắn nhất", command=calculate_shortest_path_and_draw)
+button1 = tk.Button(root, text="Đường đi ngắn nhất (DFS)", command=calculate_shortest_path_and_draw)
 result_label = tk.Label(root, text="")
 result_label.pack()
 

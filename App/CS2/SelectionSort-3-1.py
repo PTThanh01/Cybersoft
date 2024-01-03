@@ -11,6 +11,7 @@ root.title("Find Hotel")
 root.geometry("700x600")
 
 
+
 destinations = ["Sân bay","Bệnh viện Chợ Rãy","Đại học Sài Gòn","BHD Star","Ktx Đại học Sài Gòn","McDonald's",
                 "KFC","Thảo cầm viên","Dinh Độc Lập","Công viên Tao Đàn","Nhà thờ","Bảo tàng","An Dương Vương",]
 destination_buttons = []
@@ -112,13 +113,13 @@ search_entry.bind("<KeyRelease>", lambda event: apply_filters(price_combobox.get
 
 def apply_sort_filter(sort_option):
     if "Name (A-Z)" in sort_option:
-        bubble_sort_destinations_by_name(destination_buttons, "asc")
+        selection_sort_destinations_by_name(destination_buttons, "asc")
     elif "Name (Z-A)" in sort_option:
-        bubble_sort_destinations_by_name(destination_buttons, "desc")
+        selection_sort_destinations_by_name(destination_buttons, "desc")
     elif "Price (Low to High)" in sort_option:
-        bubble_sort_destinations_by_price(destination_buttons, "asc")
+        selection_sort_destinations_by_price(destination_buttons, "asc")
     elif "Price (High to Low)" in sort_option:
-        bubble_sort_destinations_by_price(destination_buttons, "desc")
+        selection_sort_destinations_by_price(destination_buttons, "desc")
 
     update_button_positions()
 
@@ -212,30 +213,33 @@ def update_destination_buttons(filtered_destinations, price_filter, rooms_filter
             button.grid()  # Show the button
         else:
             button.grid_remove()  
-def bubble_sort_destinations_by_name(dest_buttons, sort_order):
+def selection_sort_destinations_by_name(dest_buttons, sort_order):
     n = len(dest_buttons)
     locale.setlocale(locale.LC_COLLATE, 'vi_VN.utf8')
 
-    for i in range(n):
-        for j in range(0, n-i-1):
+    for i in range(n - 1):
+        min_index = i
+        for j in range(i + 1, n):
             dest_button1 = dest_buttons[j]
-            dest_button2 = dest_buttons[j+1]
+            dest_button2 = dest_buttons[min_index]
 
             dest1_text = dest_button1.cget("text")
             dest2_text = dest_button2.cget("text")
 
-            if (sort_order == "asc" and locale.strcoll(dest1_text, dest2_text) > 0) or \
-               (sort_order == "desc" and locale.strcoll(dest1_text, dest2_text) < 0):
-                dest_buttons[j], dest_buttons[j+1] = dest_buttons[j+1], dest_buttons[j]
+            if (sort_order == "asc" and locale.strcoll(dest1_text, dest2_text) < 0) or \
+               (sort_order == "desc" and locale.strcoll(dest1_text, dest2_text) > 0):
+                min_index = j
 
-# Cập nhật hàm sắp xếp theo giá tương tự
-def bubble_sort_destinations_by_price(dest_buttons, sort_order):
+        dest_buttons[i], dest_buttons[min_index] = dest_buttons[min_index], dest_buttons[i]
+
+def selection_sort_destinations_by_price(dest_buttons, sort_order):
     n = len(dest_buttons)
 
-    for i in range(n):
-        for j in range(0, n-i-1):
+    for i in range(n - 1):
+        min_index = i
+        for j in range(i + 1, n):
             dest_button1 = dest_buttons[j]
-            dest_button2 = dest_buttons[j+1]
+            dest_button2 = dest_buttons[min_index]
 
             dest1_text = dest_button1.cget("text")
             dest2_text = dest_button2.cget("text")
@@ -247,9 +251,11 @@ def bubble_sort_destinations_by_price(dest_buttons, sort_order):
             price1 = int(''.join(char for char in price1_str if char.isdigit()))
             price2 = int(''.join(char for char in price2_str if char.isdigit()))
 
-            if (sort_order == "asc" and price1 > price2) or \
-               (sort_order == "desc" and price1 < price2):
-                dest_buttons[j], dest_buttons[j+1] = dest_buttons[j+1], dest_buttons[j]
+            if (sort_order == "asc" and price1 < price2) or \
+               (sort_order == "desc" and price1 > price2):
+                min_index = j
+
+        dest_buttons[i], dest_buttons[min_index] = dest_buttons[min_index], dest_buttons[i]
 
 # Hàm trích xuất giá từ văn bản của nút
 def extract_price_from_text(text):
@@ -262,22 +268,22 @@ def extract_price_from_text(text):
 # Create a sort function for each sorting option
 def sort_by_name_az():
     apply_filters(price_combobox.get(), rooms_combobox.get(), search_entry.get())  # Áp dụng bộ lọc
-    bubble_sort_destinations_by_name(destination_buttons, "asc")
+    selection_sort_destinations_by_name(destination_buttons, "asc")
     update_button_positions()
 
 def sort_by_name_za():
     apply_filters(price_combobox.get(), rooms_combobox.get(), search_entry.get())  # Áp dụng bộ lọc
-    bubble_sort_destinations_by_name(destination_buttons, "desc")
+    selection_sort_destinations_by_name(destination_buttons, "desc")
     update_button_positions()
 
 def sort_by_price_low_high():
     apply_filters(price_combobox.get(), rooms_combobox.get(), search_entry.get())  # Áp dụng bộ lọc
-    bubble_sort_destinations_by_price(destination_buttons, "asc")
+    selection_sort_destinations_by_price(destination_buttons, "asc")
     update_button_positions()
 
 def sort_by_price_high_low():
     apply_filters(price_combobox.get(), rooms_combobox.get(), search_entry.get())  # Áp dụng bộ lọc
-    bubble_sort_destinations_by_price(destination_buttons, "desc")
+    selection_sort_destinations_by_price(destination_buttons, "desc")
     update_button_positions()
 
 # Helper function to update button positions after sorting
@@ -285,5 +291,6 @@ def update_button_positions():
     for i, button in enumerate(destination_buttons):
         button.grid(row=i, column=0, padx=5, pady=5, sticky="ew")
 
+    
 # Start the user interface
 root.mainloop()

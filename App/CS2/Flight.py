@@ -27,7 +27,7 @@ flights = [
    {"id": 15, "destination": "Istanbul", "departure": "2024-06-08 10:30", "airline": "Turkish Airlines", "price": "$675"},
    {"id": 16, "destination": "Phuket", "departure": "2024-07-15 14:45", "airline": "Thai Smile", "price": "$725"},
    {"id": 17, "destination": "Hong Kong", "departure": "2024-08-01 21:00", "airline": "Cathay Pacific", "price": "$975"},
-   {"id": 18, "destination": "Cape Town", "departure": "2024-09-15 08:30", "airline": "South African Airways", "price": "$1150"}, 
+   {"id": 18, "destination": "Cape Town", "departure": "2024-09-15 08:30", "airline": "South African Airways", "price": "$1200"}, 
 ]
 
 flight_buttons = []

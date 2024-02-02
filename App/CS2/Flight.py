@@ -1,3 +1,4 @@
+import datetime
 import locale
 from PIL import Image, ImageTk
 import customtkinter as ctk
@@ -83,11 +84,13 @@ price_combobox.bind("<KeyRelease>", lambda event: apply_filters(price_combobox.g
 departure_filter_label = CTkLabel(filter_frame, text="Filter by Departure:")
 departure_filter_label.grid(row=1, column=4, padx=5, pady=5, sticky="w")
 
-departure_options = ["Any", "Before 2024-02-01", "2024-02-01 and later"]
+departure_options = ["Any", "Before 2024-02-01", "2024-02-01 and later", "Exact date"]
 departure_combobox = CTkComboBox(filter_frame, values=departure_options)
 departure_combobox.grid(row=1, column=5, padx=5, pady=5)
 
-departure_combobox.bind("<KeyRelease>", lambda event: apply_filters(price_combobox.get(), departure_combobox.get()))
+departure_combobox.bind("<KeyRelease>", lambda event: apply_filters(price_combobox.get(), departure_combobox.get(), search_entry.get(), sort_combobox.get()))
+
+
 
 # Add search
 search_label = CTkLabel(filter_frame, text="Search:")
@@ -133,10 +136,18 @@ apply_filter_button = CTkButton(
 )
 apply_filter_button.grid(row=3, column=4, columnspan=2, pady=5)
 
-def apply_filters(price_filter, departure_filter, keyword_filter, sort_option=None):
+global departure_filter
+def apply_filters(price_filter, departure_filter, keyword_filter="", sort_option=None):
     # Logic to filter flights based on price, departure, keyword, and sort_option
     global filtered_flights
-    filtered_flights = filter_flights(price_filter, departure_filter, keyword_filter)
+
+    # Cập nhật departure_filter với giá trị mới
+    departure_filter = departure_filter
+
+    if departure_filter == "Any":
+        filtered_flights = filter_flights(price_filter, None, keyword_filter)
+    else:
+        filtered_flights = filter_flights(price_filter, departure_filter, keyword_filter)
 
     if sort_option:
         apply_sort_filter(sort_option)
@@ -144,7 +155,7 @@ def apply_filters(price_filter, departure_filter, keyword_filter, sort_option=No
     # Update flight buttons with filtered flights
     update_flight_buttons(filtered_flights, price_filter, departure_filter)
 
-
+    
 # Helper function for bubble sort by destination
 def bubble_sort_flights_by_destination(flight_buttons, sort_order):
     n = len(flight_buttons)
@@ -201,9 +212,6 @@ def bubble_sort_flights_by_price(flight_buttons, sort_order):
                 flight_buttons[j], flight_buttons[j+1] = flight_buttons[j+1], flight_buttons[j]
 
 
-
-
-# Function to filter flights based on price and departure
 def filter_flights(price_filter, departure_filter, keyword_filter):
     filtered_flights = []
     for flight in flights:
@@ -214,12 +222,31 @@ def filter_flights(price_filter, departure_filter, keyword_filter):
         # Check if the flight meets the selected filters and keyword
         if (
             (price_filter == "Any" or check_price_filter(price, price_filter)) and
-            (departure_filter == "Any" or check_departure_filter(departure, departure_filter)) and
+            ((departure_filter is None) or (departure_filter == "Any") or check_departure_filter(departure, departure_filter)) and
             (keyword_filter.lower() in keyword.lower())
         ):
             filtered_flights.append(flight)
 
     return filtered_flights
+
+# Linear search function
+def linear_search(query, text):
+    query_length = len(query)
+    text_length = len(text)
+
+    for i in range(text_length - query_length + 1):
+        match = True
+        for j in range(query_length):
+            if text[i + j] != query[j]:
+                match = False
+                break
+        if match:
+            return True
+
+    return False
+
+# Bind the key release event to the apply_filters function
+search_entry.bind("<KeyRelease>", lambda event: apply_filters(price_combobox.get(), departure_combobox.get(), search_entry.get()))
 
 # Check price
 def check_price_filter(flight_price, filter_option):
@@ -241,7 +268,7 @@ def check_price_filter(flight_price, filter_option):
     else:
         return False
 
-# Check departure
+
 def check_departure_filter(flight_departure, filter_option):
     if filter_option == "Any":
         return True
@@ -251,7 +278,7 @@ def check_departure_filter(flight_departure, filter_option):
     elif filter_option == "2024-02-01 and later":
         return flight_departure >= "2024-02-01"
     else:
-        return False
+        return flight_departure.startswith(filter_option)
     
 # Helper function to update flight buttons after sorting
 def update_flight_buttons(filtered_flights, price_filter, departure_filter):
